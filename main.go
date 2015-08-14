@@ -31,7 +31,10 @@ func main() {
 		dryRun:      *dryRun,
 	}
 
-	NewCoverageService(s).Send(os.Stdin)
+	if err := NewCoverageService(s).Send(os.Stdin); err != nil {
+		fmt.Fprintf(os.Stderr, "error : %s\n", err.Error())
+		os.Exit(2)
+	}
 }
 
 type Slack struct {
