@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/nlopes/slack"
+	"github.com/kyokomi/caladbolg/slack"
 )
 
 func main() {
@@ -23,48 +23,11 @@ func main() {
 		*slackChannel = os.Getenv("SLACK_CHANNEL")
 	}
 
-	s := Slack{
-		Slack:       slack.New(*slackToken),
-		channelName: *slackChannel,
-		userName:    *userName,
-		iconURL:     *iconURL,
-		dryRun:      *dryRun,
-	}
-
-	if err := NewCoverageService(s).Send(os.Stdin); err != nil {
+	c := slack.New(*slackToken, *slackChannel, *userName, *iconURL)
+	s := NewCoverageService(c)
+	s.DryRun = *dryRun
+	if err := s.Send(os.Stdin); err != nil {
 		fmt.Fprintf(os.Stderr, "error : %s\n", err.Error())
 		os.Exit(2)
 	}
-}
-
-type Slack struct {
-	*slack.Slack
-	channelName string
-	userName    string
-	iconURL     string
-	dryRun      bool
-}
-
-func (s Slack) NewDefaultPostMessageParams() slack.PostMessageParameters {
-	params := slack.NewPostMessageParameters()
-	if s.userName != "" {
-		params.Username = s.userName
-	}
-	if s.iconURL != "" {
-		params.IconURL = s.iconURL
-	}
-	return params
-}
-
-func (s Slack) PostDefaultMessage(message string) error {
-	return s.PostMessage(message, s.NewDefaultPostMessageParams())
-}
-
-func (s Slack) PostMessage(message string, params slack.PostMessageParameters) error {
-	if s.dryRun {
-		fmt.Println(message)
-		return nil
-	}
-	_, _, err := s.Slack.PostMessage(s.channelName, message, params)
-	return err
 }
